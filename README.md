@@ -24,14 +24,24 @@ A secure, full-stack AI-powered study companion that helps with exam preparation
    ```
 
 2. **Set up environment variables**:
-   - Copy `.env.example` to `.env`:
+   - Copy the example environment file to create your local configuration:
+     
+     **Windows:**
      ```cmd
      copy .env.example .env
      ```
-   - Edit `.env` and add your Gemini API key:
+     
+     **macOS/Linux:**
+     ```bash
+     cp .env.example .env
+     ```
+   
+   - Edit the new `.env` file and replace the placeholder with your actual Gemini API key:
      ```
      GEMINI_API_KEY=your_actual_gemini_api_key_here
      ```
+     
+   **Note:** The `.env` file contains your secret API key and is ignored by git for security.
 
 3. **Start the server**:
    ```cmd
@@ -46,6 +56,24 @@ For development with auto-restart:
 ```cmd
 npm run dev
 ```
+
+## Project Structure
+
+```
+📁 AI Revision Assistant/
+├── 📄 ai-revision-assistant.html    # Main frontend application
+├── 📄 server.js                     # Backend API server
+├── 📄 package.json                  # Node.js dependencies
+├── 📄 .env.example                  # Environment template (safe to share)
+├── 📄 .env                          # Your actual API keys (never commit!)
+├── 📄 .gitignore                    # Git ignore rules
+└── 📄 README.md                     # This file
+```
+
+**Important Files:**
+- **`.env.example`** - Template showing what environment variables are needed
+- **`.env`** - Your actual environment file with real API keys (created by you)
+- The `.env` file is automatically ignored by git to protect your API keys
 
 ## Architecture
 
