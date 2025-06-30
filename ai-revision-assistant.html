@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Revision Assistant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .backend-status {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            color: white;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+
+        .status-indicator.connected {
+            color: #28a745;
+        }
+
+        .status-indicator.disconnected {
+            color: #dc3545;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab {
+            background: transparent;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 5px;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .content-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            min-height: 600px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-header i {
+            margin-right: 10px;
+            color: #667eea;
+        }
+
+        .card-header h2 {
+            color: #333;
+            font-size: 1.3rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .revision-plan {
+            margin-top: 20px;
+        }
+
+        .day-plan {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .day-plan h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .day-plan ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .day-plan li {
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .day-plan li:before {
+            content: "✓";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .quiz-container {
+            margin-top: 20px;
+        }
+
+        .question {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .question h4 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .option {
+            padding: 10px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .option:hover {
+            border-color: #667eea;
+            background: #f0f3ff;
+        }
+
+        .option.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .option.correct {
+            border-color: #28a745;
+            background: #28a745;
+            color: white;
+        }
+
+        .option.incorrect {
+            border-color: #dc3545;
+            background: #dc3545;
+            color: white;
+        }
+
+        .summary-result {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .nav-tab {
+                margin: 5px;
+                flex: 1;
+                min-width: 120px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .backend-status {
+                padding: 10px;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 AI Revision Assistant</h1>
+            <p>Your intelligent study companion for exam preparation</p>
+        </div>
+
+        <div class="backend-status">
+            <strong>🤖 AI Backend Status:</strong>
+            <span id="backendStatus" class="status-indicator disconnected">Checking...</span>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('study-planner')">
+                <i data-feather="calendar"></i>
+                Study Planner
+            </button>
+            <button class="nav-tab" onclick="switchTab('quiz-generator')">
+                <i data-feather="help-circle"></i>
+                Quiz Generator
+            </button>
+            <button class="nav-tab" onclick="switchTab('notes-summarizer')">
+                <i data-feather="file-text"></i>
+                Notes Summarizer
+            </button>
+            <button class="nav-tab" onclick="switchTab('progress-tracker')">
+                <i data-feather="trending-up"></i>
+                Progress Tracker
+            </button>
+        </div>
+
+        <div class="content-container">
+            <!-- Study Planner -->
+            <div id="study-planner" class="tab-content active">
+                <div class="card-header">
+                    <i data-feather="calendar"></i>
+                    <h2>Study Planner</h2>
+                </div>
+                <form id="plannerForm">
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <input type="text" id="subject" required placeholder="e.g., Physics, Mathematics">
+                    </div>
+                    <div class="form-group">
+                        <label for="examDate">Exam Date</label>
+                        <input type="date" id="examDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="weakTopics">Weak Topics (comma-separated)</label>
+                        <textarea id="weakTopics" placeholder="e.g., Thermodynamics, Optics, Waves"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="studyHours">Daily Study Hours</label>
+                        <select id="studyHours">
+                            <option value="2">2 hours</option>
+                            <option value="3">3 hours</option>
+                            <option value="4" selected>4 hours</option>
+                            <option value="5">5 hours</option>
+                            <option value="6">6+ hours</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">
+                        <i data-feather="calendar-plus"></i>
+                        Generate Study Plan
+                    </button>
+                </form>
+                <div id="studyPlan"></div>
+            </div>
+
+            <!-- Quiz Generator -->
+            <div id="quiz-generator" class="tab-content">
+                <div class="card-header">
+                    <i data-feather="help-circle"></i>
+                    <h2>Quiz Generator</h2>
+                </div>
+                <form id="quizForm">
+                    <div class="form-group">
+                        <label for="quizTopic">Topic</label>
+                        <input type="text" id="quizTopic" required placeholder="e.g., Newton's Laws">
+                    </div>
+                    <div class="form-group">
+                        <label for="difficulty">Difficulty Level</label>
+                        <select id="difficulty">
+                            <option value="easy">Easy</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="numQuestions">Number of Questions</label>
+                        <select id="numQuestions">
+                            <option value="3">3 questions</option>
+                            <option value="5" selected>5 questions</option>
+                            <option value="10">10 questions</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">
+                        <i data-feather="play"></i>
+                        Generate Quiz
+                    </button>
+                </form>
+                <div id="quizContainer"></div>
+            </div>
+
+            <!-- Notes Summarizer -->
+            <div id="notes-summarizer" class="tab-content">
+                <div class="card-header">
+                    <i data-feather="file-text"></i>
+                    <h2>Notes Summarizer</h2>
+                </div>
+                <form id="summarizerForm">
+                    <div class="form-group">
+                        <label for="notes">Your Notes</label>
+                        <textarea id="notes" placeholder="Paste your long notes here..." rows="6"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="summaryType">Summary Type</label>
+                        <select id="summaryType">
+                            <option value="key-points">Key Points</option>
+                            <option value="brief">Brief Summary</option>
+                            <option value="flashcards">Flashcard Format</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">
+                        <i data-feather="zap"></i>
+                        Summarize Notes
+                    </button>
+                </form>
+                <div id="summaryResult"></div>
+            </div>
+
+            <!-- Progress Tracker -->
+            <div id="progress-tracker" class="tab-content">
+                <div class="card-header">
+                    <i data-feather="trending-up"></i>
+                    <h2>Progress Tracker</h2>
+                </div>
+                <div class="progress-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="studyDays">0</div>
+                        <div class="stat-label">Study Days</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="quizzesTaken">0</div>
+                        <div class="stat-label">Quizzes Taken</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="avgScore">0%</div>
+                        <div class="stat-label">Average Score</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="topicsReviewed">0</div>
+                        <div class="stat-label">Topics Reviewed</div>
+                    </div>
+                </div>
+                <button class="btn" onclick="resetProgress()" style="margin-top: 20px;">
+                    <i data-feather="refresh-cw"></i>
+                    Reset Progress
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Feather icons safely
+        function initFeatherIcons() {
+            if (typeof feather !== 'undefined' && feather.replace) {
+                try {
+                    feather.replace();
+                    console.log('✅ Feather icons initialized');
+                } catch (error) {
+                    console.warn('⚠️ Error initializing Feather icons:', error);
+                }
+            } else {
+                console.warn('⚠️ Feather icons not loaded, retrying...');
+                setTimeout(initFeatherIcons, 100);
+            }
+        }
+
+        // Backend connection status
+        let backendConnected = false;
+
+        // Global app data
+        window.appData = {
+            studyPlans: [],
+            quizResults: [],
+            summaries: [],
+            progress: {
+                studyDays: 0,
+                quizzesTaken: 0,
+                totalScore: 0,
+                topicsReviewed: new Set()
+            }
+        };
+
+        // Backend Status Check
+        async function checkBackendStatus() {
+            console.log('Checking backend status...');
+            try {
+                console.log('Making request to /api/health');
+                const response = await fetch('/api/health', {
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                console.log('Response received:', response.status, response.statusText);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Response data:', data);
+                    backendConnected = true;
+                    document.getElementById('backendStatus').textContent = '✅ Connected';
+                    document.getElementById('backendStatus').className = 'status-indicator connected';
+                    console.log('✅ Backend connected successfully:', data.message);
+                } else {
+                    throw new Error(`Backend responded with status: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('❌ Backend connection failed:', error);
+                backendConnected = false;
+                const statusElement = document.getElementById('backendStatus');
+                if (statusElement) {
+                    statusElement.textContent = '❌ Disconnected';
+                    statusElement.className = 'status-indicator disconnected';
+                }
+            }
+        }
+
+        // AI API call function using backend
+        async function callGemini(prompt) {
+            if (!backendConnected) {
+                // Try to reconnect
+                await checkBackendStatus();
+                if (!backendConnected) {
+                    throw new Error('Backend service is not available. Please make sure the server is running.');
+                }
+            }
+
+            try {
+                console.log('Sending prompt to backend:', prompt.substring(0, 100) + '...');
+                
+                const response = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `Server Error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (e) {
+                        // If can't parse JSON, use default message
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json();
+                console.log('Received response from backend');
+                return data.response;
+            } catch (error) {
+                console.error('AI API Error:', error);
+                throw error;
+            }
+        }
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // Add active class to clicked tab and corresponding content
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            // Re-initialize feather icons safely
+            initFeatherIcons();
+        }
+
+        // Study Planner with Gemini
+        async function generateStudyPlan(subject, examDate, weakTopics, studyHours) {
+            const today = new Date();
+            const exam = new Date(examDate);
+            const daysUntilExam = Math.ceil((exam - today) / (1000 * 60 * 60 * 24));
+
+            const prompt = `You are an educational planning assistant. Create a detailed study plan for ${subject} with the following requirements:
+
+**Study Details:**
+- Subject: ${subject}
+- Exam date: ${examDate} (${daysUntilExam} days from now)
+- Daily study hours available: ${studyHours} hours
+- Weak topics to focus on: ${weakTopics || 'Not specified'}
+
+**Instructions:**
+- Create a day-by-day study schedule for the next ${Math.min(daysUntilExam - 1, 14)} days
+- Each day should have specific topics to study and activities to complete
+- Include practice exercises, review sessions, and mock tests
+- Make it practical and achievable within the given time constraints
+- Focus more time on weak topics if specified
+- Include variety in study methods (reading, practice problems, review, etc.)
+
+**Format your response as:**
+Day 1 - [Date]
+• Topic: [Specific topic to study]
+• Activities: [List of specific activities]
+• Duration: [Time allocation]
+
+Day 2 - [Date]
+• Topic: [Specific topic to study]
+• Activities: [List of specific activities]
+• Duration: [Time allocation]
+
+[Continue for all days...]
+
+Make sure the plan is comprehensive, realistic, and tailored to ${subject}.`;
+
+            try {
+                const aiResponse = await callGemini(prompt);
+                return aiResponse;
+            } catch (error) {
+                console.error('Error generating study plan:', error);
+                // Fallback to basic plan if API fails
+                const topics = weakTopics ? weakTopics.split(',').map(t => t.trim()) : [`${subject} Basics`, `${subject} Advanced Topics`];
+                const plan = [];
+                
+                for (let day = 0; day < Math.min(daysUntilExam - 1, 14); day++) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() + day);
+                    
+                    plan.push({
+                        date: date.toLocaleDateString(),
+                        day: day + 1,
+                        activities: [
+                            `Study ${topics[day % topics.length]}`,
+                            `Complete practice problems`,
+                            `Review previous topics`
+                        ]
+                    });
+                }
+                
+                // Format fallback plan as text
+                let fallbackText = `📚 Basic Study Plan for ${subject}\n\n`;
+                plan.forEach(day => {
+                    fallbackText += `Day ${day.day} - ${day.date}\n`;
+                    day.activities.forEach(activity => {
+                        fallbackText += `• ${activity}\n`;
+                    });
+                    fallbackText += `• Duration: ${studyHours} hours\n\n`;
+                });
+                
+                return fallbackText;
+            }
+        }
+
+        // Quiz Generator with Gemini
+        async function generateQuiz(topic, difficulty, numQuestions) {
+            const prompt = `You are an educational quiz creator. Create a ${difficulty} level quiz about ${topic} with ${numQuestions} multiple choice questions.
+Format each question exactly as follows:
+Q: [Question text]
+A) [Option 1]
+B) [Option 2] 
+C) [Option 3]
+D) [Option 4]
+Correct: [A/B/C/D]
+
+Make questions educational and relevant to ${topic}. Ensure clear formatting and accurate answers.`;
+
+            try {
+                const aiResponse = await callGemini(prompt);
+                return parseQuizResponse(aiResponse, topic);
+            } catch (error) {
+                // Fallback to basic quiz if API fails
+                return generateBasicQuiz(topic, difficulty, numQuestions);
+            }
+        }
+
+        function parseQuizResponse(response, topic) {
+            const questions = [];
+            const questionBlocks = response.split(/Q:\s*/);
+            
+            questionBlocks.forEach((block, index) => {
+                if (index === 0 || !block.trim()) return;
+                
+                const lines = block.trim().split('\n');
+                const questionText = lines[0];
+                const options = [];
+                let correctIndex = 0;
+                
+                lines.forEach(line => {
+                    if (line.match(/^[A-D]\)/)) {
+                        options.push(line.substring(3).trim());
+                    } else if (line.startsWith('Correct:')) {
+                        const correctLetter = line.split(':')[1].trim();
+                        correctIndex = correctLetter.charCodeAt(0) - 65; // A=0, B=1, C=2, D=3
+                    }
+                });
+                
+                if (questionText && options.length === 4) {
+                    questions.push({
+                        id: index,
+                        question: questionText,
+                        options: options,
+                        correct: correctIndex
+                    });
+                }
+            });
+            
+            return questions;
+        }
+
+        function generateBasicQuiz(topic, difficulty, numQuestions) {
+            const questions = [];
+            for (let i = 0; i < numQuestions; i++) {
+                questions.push({
+                    id: i + 1,
+                    question: `${difficulty} question about ${topic} #${i + 1}`,
+                    options: [
+                        `Correct answer for ${topic}`,
+                        `Incorrect option A`,
+                        `Incorrect option B`,
+                        `Incorrect option C`
+                    ],
+                    correct: 0
+                });
+            }
+            return questions;
+        }
+
+        // Notes Summarizer with Gemini
+        async function summarizeNotes(notes, summaryType) {
+            let prompt = '';
+            
+            switch (summaryType) {
+                case 'key-points':
+                    prompt = `You are a study assistant. Extract the key points from these notes and format them as a clear numbered list:\n\n${notes}`;
+                    break;
+                case 'brief':
+                    prompt = `You are a study assistant. Provide a brief summary of these notes in 2-3 clear sentences:\n\n${notes}`;
+                    break;
+                case 'flashcards':
+                    prompt = `You are a study assistant. Convert these notes into flashcard format with clear questions and answers:\n\n${notes}`;
+                    break;
+            }
+
+            try {
+                const aiResponse = await callGemini(prompt);
+                return {
+                    type: summaryType === 'key-points' ? 'Key Points' : 
+                          summaryType === 'brief' ? 'Brief Summary' : 'Flashcards',
+                    content: aiResponse
+                };
+            } catch (error) {
+                // Fallback to basic summarization
+                const sentences = notes.split('.').filter(s => s.trim().length > 0);
+                return {
+                    type: 'Summary',
+                    content: sentences.slice(0, 3).join('. ') + '.'
+                };
+            }
+        }
+
+        // Event Handlers
+        document.getElementById('plannerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const subject = document.getElementById('subject').value;
+            const examDate = document.getElementById('examDate').value;
+            const weakTopics = document.getElementById('weakTopics').value;
+            const studyHours = parseInt(document.getElementById('studyHours').value);
+
+            console.log('Generating study plan for:', { subject, examDate, weakTopics, studyHours });
+
+            const planContainer = document.getElementById('studyPlan');
+            planContainer.innerHTML = '<div class="loading">Generating your Gemini AI-powered study plan...</div>';
+
+            try {
+                const plan = await generateStudyPlan(subject, examDate, weakTopics, studyHours);
+                console.log('Generated plan:', plan);
+                
+                window.appData.studyPlans.push({ subject, plan, created: new Date() });
+                
+                const planHTML = `
+                    <div class="revision-plan">
+                        <h3>📚 Your Gemini AI-Generated Study Plan</h3>
+                        <div class="summary-result">
+                            <div style="white-space: pre-line;">${plan}</div>
+                        </div>
+                    </div>
+                `;
+                
+                planContainer.innerHTML = planHTML;
+                updateProgressDisplay();
+            } catch (error) {
+                console.error('Error generating study plan:', error);
+                planContainer.innerHTML = `
+                    <div class="summary-result" style="border-left-color: #dc3545;">
+                        <h3>❌ Error Generating Study Plan</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p><strong>Tips:</strong></p>
+                        <ul>
+                            <li>Make sure the backend server is running</li>
+                            <li>Check that your Gemini API key is configured in the .env file</li>
+                            <li>Verify your internet connection</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        });
+
+        document.getElementById('quizForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const topic = document.getElementById('quizTopic').value;
+            const difficulty = document.getElementById('difficulty').value;
+            const numQuestions = parseInt(document.getElementById('numQuestions').value);
+
+            const quizContainer = document.getElementById('quizContainer');
+            quizContainer.innerHTML = '<div class="loading">Generating Gemini AI-powered quiz questions...</div>';
+
+            try {
+                const questions = await generateQuiz(topic, difficulty, numQuestions);
+                window.appData.progress.topicsReviewed.add(topic);
+                
+                let quizHTML = '<div class="quiz-container"><h3>🧠 Gemini AI-Generated Quiz: ' + topic + '</h3>';
+                questions.forEach((q, index) => {
+                    quizHTML += `
+                        <div class="question">
+                            <h4>Question ${q.id}: ${q.question}</h4>
+                            <div class="options">
+                                ${q.options.map((option, optIndex) => 
+                                    `<div class="option" onclick="selectOption(${index}, ${optIndex}, ${q.correct})">${option}</div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+                quizHTML += '<button class="btn" onclick="submitQuiz()" style="margin-top: 20px;"><i data-feather="check"></i> Submit Quiz</button></div>';
+                
+                quizContainer.innerHTML = quizHTML;
+                initFeatherIcons();
+                
+                window.currentQuiz = { questions, topic, answers: new Array(questions.length).fill(-1) };
+            } catch (error) {
+                quizContainer.innerHTML = `
+                    <div class="summary-result" style="border-left-color: #dc3545;">
+                        <h3>❌ Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        document.getElementById('summarizerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const notes = document.getElementById('notes').value;
+            const summaryType = document.getElementById('summaryType').value;
+
+            if (!notes.trim()) {
+                alert('Please enter some notes to summarize.');
+                return;
+            }
+
+            const summaryContainer = document.getElementById('summaryResult');
+            summaryContainer.innerHTML = '<div class="loading">Gemini AI is analyzing and summarizing your notes...</div>';
+
+            try {
+                const summary = await summarizeNotes(notes, summaryType);
+                window.appData.summaries.push({ notes, summary, created: new Date() });
+                
+                const summaryHTML = `
+                    <div class="summary-result">
+                        <h3>📝 Gemini AI-Generated ${summary.type}</h3>
+                        <div style="white-space: pre-line; margin-top: 15px;">${summary.content}</div>
+                    </div>
+                `;
+                
+                summaryContainer.innerHTML = summaryHTML;
+            } catch (error) {
+                summaryContainer.innerHTML = `
+                    <div class="summary-result" style="border-left-color: #dc3545;">
+                        <h3>❌ Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+
+        // Quiz functionality
+        function selectOption(questionIndex, optionIndex, correctIndex) {
+            const options = document.querySelectorAll(`.question:nth-child(${questionIndex + 2}) .option`);
+            options.forEach(opt => opt.classList.remove('selected'));
+            options[optionIndex].classList.add('selected');
+            
+            if (window.currentQuiz) {
+                window.currentQuiz.answers[questionIndex] = optionIndex;
+            }
+        }
+
+        function submitQuiz() {
+            if (!window.currentQuiz) return;
+            
+            const { questions, answers, topic } = window.currentQuiz;
+            let correct = 0;
+            
+            questions.forEach((q, index) => {
+                const options = document.querySelectorAll(`.question:nth-child(${index + 2}) .option`);
+                const userAnswer = answers[index];
+                const correctAnswer = q.correct;
+                
+                if (userAnswer === correctAnswer) {
+                    correct++;
+                    if (userAnswer >= 0) options[userAnswer].classList.add('correct');
+                } else {
+                    if (userAnswer >= 0) options[userAnswer].classList.add('incorrect');
+                    options[correctAnswer].classList.add('correct');
+                }
+                
+                options.forEach(opt => opt.style.pointerEvents = 'none');
+            });
+            
+            const score = Math.round((correct / questions.length) * 100);
+            window.appData.quizResults.push({ topic, score, questions: questions.length, correct, date: new Date() });
+            window.appData.progress.quizzesTaken++;
+            window.appData.progress.totalScore += score;
+            
+            const resultHTML = `
+                <div class="summary-result" style="margin-top: 20px;">
+                    <h3>🎯 Quiz Results</h3>
+                    <p><strong>Score:</strong> ${correct}/${questions.length} (${score}%)</p>
+                    <p><strong>Performance:</strong> ${score >= 80 ? '🌟 Excellent!' : score >= 60 ? '👍 Good job!' : '💪 Keep practicing!'}</p>
+                </div>
+            `;
+            
+            document.getElementById('quizContainer').insertAdjacentHTML('beforeend', resultHTML);
+            updateProgressDisplay();
+        }
+
+        function updateProgressDisplay() {
+            document.getElementById('studyDays').textContent = window.appData.progress.studyDays;
+            document.getElementById('quizzesTaken').textContent = window.appData.progress.quizzesTaken;
+            document.getElementById('avgScore').textContent = window.appData.progress.quizzesTaken > 0 
+                ? Math.round(window.appData.progress.totalScore / window.appData.progress.quizzesTaken) + '%' 
+                : '0%';
+            document.getElementById('topicsReviewed').textContent = window.appData.progress.topicsReviewed.size;
+        }
+
+        function resetProgress() {
+            if (confirm('Are you sure you want to reset all progress? This cannot be undone.')) {
+                window.appData = {
+                    studyPlans: [],
+                    quizResults: [],
+                    summaries: [],
+                    progress: {
+                        studyDays: 0,
+                        quizzesTaken: 0,
+                        totalScore: 0,
+                        topicsReviewed: new Set()
+                    }
+                };
+                updateProgressDisplay();
+                
+                document.getElementById('studyPlan').innerHTML = '';
+                document.getElementById('quizContainer').innerHTML = '';
+                document.getElementById('summaryResult').innerHTML = '';
+                
+                alert('Progress has been reset successfully!');
+            }
+        }
+
+        // Set minimum date to today
+        document.getElementById('examDate').min = new Date().toISOString().split('T')[0];
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing...');
+            initFeatherIcons();
+            checkBackendStatus();
+            updateProgressDisplay();
+        });
+
+        // Also run initialization immediately in case DOM is already loaded
+        if (document.readyState === 'loading') {
+            // Document still loading, wait for DOMContentLoaded
+        } else {
+            // Document already loaded
+            console.log('Document already loaded, initializing immediately...');
+            initFeatherIcons();
+            checkBackendStatus();
+            updateProgressDisplay();
+        }
+        
+        // Check backend status every 30 seconds
+        setInterval(checkBackendStatus, 30000);
+    </script>
+</body>
+</html>
