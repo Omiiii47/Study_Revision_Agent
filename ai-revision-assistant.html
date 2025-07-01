@@ -827,6 +827,121 @@ Make questions educational and relevant to ${topic}. Ensure clear formatting and
             }
         }
 
+        // Input Validation Functions
+        function validateStudyPlanInputs(subject, examDate, weakTopics, studyHours) {
+            const errors = [];
+            
+            // Subject validation
+            if (!subject || subject.trim().length < 2) {
+                errors.push("Subject must be at least 2 characters long");
+            }
+            
+            // Check for nonsensical subjects
+            const invalidSubjects = ['hey', 'hello', 'hi', 'test', 'nothing', 'idk', 'lol'];
+            if (invalidSubjects.includes(subject.toLowerCase().trim())) {
+                errors.push("Please enter a valid academic subject (e.g., Mathematics, Biology, Computer Science)");
+            }
+            
+            // Exam date validation
+            const today = new Date();
+            const exam = new Date(examDate);
+            
+            if (!examDate) {
+                errors.push("Please select an exam date");
+            } else if (exam <= today) {
+                errors.push("Exam date must be in the future");
+            } else if (exam > new Date(today.getTime() + 365 * 24 * 60 * 60 * 1000)) {
+                errors.push("Exam date cannot be more than one year in the future");
+            }
+            
+            // Study hours validation
+            if (!studyHours || studyHours < 1 || studyHours > 24) {
+                errors.push("Daily study hours must be between 1 and 24");
+            }
+            
+            // Weak topics validation
+            if (weakTopics && weakTopics.trim().toLowerCase() === 'everything') {
+                errors.push("Please be more specific about your weak topics (e.g., 'Calculus derivatives, Organic chemistry reactions')");
+            }
+            
+            return {
+                isValid: errors.length === 0,
+                errors: errors,
+                daysUntilExam: Math.ceil((exam - today) / (1000 * 60 * 60 * 24))
+            };
+        }
+        
+        function validateQuizInputs(topic, difficulty, numQuestions) {
+            const errors = [];
+            
+            // Topic validation
+            if (!topic || topic.trim().length < 2) {
+                errors.push("Topic must be at least 2 characters long");
+            }
+            
+            // Check for vague topics
+            const vaguTopics = ['science', 'stuff', 'things', 'everything', 'anything', 'idk', 'random'];
+            if (vaguTopics.includes(topic.toLowerCase().trim())) {
+                errors.push("Please be more specific about the topic (e.g., 'Cell Biology', 'World War II', 'JavaScript Arrays')");
+            }
+            
+            // Difficulty validation
+            const validDifficulties = ['easy', 'medium', 'hard'];
+            if (!validDifficulties.includes(difficulty.toLowerCase())) {
+                errors.push("Please select a valid difficulty level");
+            }
+            
+            // Number of questions validation
+            const num = parseInt(numQuestions);
+            if (!num || num < 1 || num > 20) {
+                errors.push("Number of questions must be between 1 and 20");
+            }
+            
+            return {
+                isValid: errors.length === 0,
+                errors: errors
+            };
+        }
+        
+        function validateNotesInput(notes) {
+            const errors = [];
+            
+            if (!notes || notes.trim().length < 10) {
+                errors.push("Please provide at least 10 characters of notes content");
+            }
+            
+            // Check for meaningful content
+            const wordCount = notes.trim().split(/\s+/).length;
+            if (wordCount < 5) {
+                errors.push("Please provide more detailed notes (at least 5 words)");
+            }
+            
+            // Check for nonsensical input
+            const repeatedChar = /(.)\1{10,}/;
+            if (repeatedChar.test(notes)) {
+                errors.push("Please provide meaningful note content, not repeated characters");
+            }
+            
+            return {
+                isValid: errors.length === 0,
+                errors: errors
+            };
+        }
+        
+        function displayValidationErrors(errors, containerId) {
+            const container = document.getElementById(containerId);
+            const errorHTML = `
+                <div class="summary-result" style="border-left-color: #dc3545; background-color: #fff5f5;">
+                    <h3>⚠️ Input Validation Errors</h3>
+                    <ul style="margin-left: 20px; color: #dc3545;">
+                        ${errors.map(error => `<li>${error}</li>`).join('')}
+                    </ul>
+                    <p><strong>Please fix these issues and try again.</strong></p>
+                </div>
+            `;
+            container.innerHTML = errorHTML;
+        }
+
         // Event Handlers
         document.getElementById('plannerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -837,6 +952,13 @@ Make questions educational and relevant to ${topic}. Ensure clear formatting and
             const studyHours = parseInt(document.getElementById('studyHours').value);
 
             console.log('Generating study plan for:', { subject, examDate, weakTopics, studyHours });
+
+            // Input validation
+            const validation = validateStudyPlanInputs(subject, examDate, weakTopics, studyHours);
+            if (!validation.isValid) {
+                displayValidationErrors(validation.errors, 'studyPlan');
+                return;
+            }
 
             const planContainer = document.getElementById('studyPlan');
             planContainer.innerHTML = '<div class="loading">Generating your Gemini AI-powered study plan...</div>';
@@ -882,6 +1004,13 @@ Make questions educational and relevant to ${topic}. Ensure clear formatting and
             const difficulty = document.getElementById('difficulty').value;
             const numQuestions = parseInt(document.getElementById('numQuestions').value);
 
+            // Input validation
+            const validation = validateQuizInputs(topic, difficulty, numQuestions);
+            if (!validation.isValid) {
+                displayValidationErrors(validation.errors, 'quizContainer');
+                return;
+            }
+
             const quizContainer = document.getElementById('quizContainer');
             quizContainer.innerHTML = '<div class="loading">Generating Gemini AI-powered quiz questions...</div>';
 
@@ -926,6 +1055,13 @@ Make questions educational and relevant to ${topic}. Ensure clear formatting and
 
             if (!notes.trim()) {
                 alert('Please enter some notes to summarize.');
+                return;
+            }
+
+            // Input validation
+            const validation = validateNotesInput(notes);
+            if (!validation.isValid) {
+                displayValidationErrors(validation.errors, 'summaryResult');
                 return;
             }
 
